@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by qincasin on 2021/5/26.
  * 模拟cas aba bug    主线程 将a +1  得到2 ， 其他线程 将a+2 然后在-1   最终结果a 都是 2
  */
-public class CasBugDemo {
+public class CasABADemo {
     public static AtomicInteger a = new AtomicInteger(1);
 
     public static void main(String[] args) {
