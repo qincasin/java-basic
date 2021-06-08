@@ -1,8 +1,10 @@
 package cas;
 
+import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Created by qincasin on 2021/5/22.
@@ -10,6 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Demo3 {
     volatile static int count =0;
+//    LongAdder;
+//    HashMap
 
     /**
      * 通过修改count++ 其中第三步的步骤来实现线程安全
