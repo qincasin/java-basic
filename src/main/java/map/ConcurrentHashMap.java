@@ -791,11 +791,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     @SuppressWarnings("unchecked") //获取传进来数组指定下标位置的元素
     static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
         // 第一个参数是数组，第二个参数是偏移量   ，计算偏移量的方法就是使用左移和位运算来代替乘法计算的
-        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE); //去主存中获取数据   获取时 使用左移 和 位运算 来替代乘法
+        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE); //去主存中获取数据   获取时 使用位移运算 来替代乘法
     }
 
     static final <K,V> boolean casTabAt(Node<K,V>[] tab, int i,
                                         Node<K,V> c, Node<K,V> v) {
+        //tab 代表是数组，第二个是偏移量 ； c 代表期望值；v 成功后需要替换到该值上面
         return U.compareAndSwapObject(tab, ((long)i << ASHIFT) + ABASE, c, v);
     }
 
@@ -893,7 +894,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public ConcurrentHashMap(int initialCapacity) {
         if (initialCapacity < 0)
             throw new IllegalArgumentException();
-
+        //假如这个时候传入的是16 ，这个时候 扩容后的容量会计算出来是 32 (16+8+1 取2次方的最小值也就是32)
         int cap = ((initialCapacity >= (MAXIMUM_CAPACITY >>> 1)) ?
                 MAXIMUM_CAPACITY :
                 tableSizeFor(initialCapacity + (initialCapacity >>> 1) + 1));
@@ -1110,7 +1111,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         //控制k 和 v 不能为null
         if (key == null || value == null) throw new NullPointerException();
 
-        //通过spread方法，可以让高位也能参与进寻址运算。
+        //通过spread方法，可以让高位也能参与进寻址运算。 扰动函数
         int hash = spread(key.hashCode());
         //binCount表示当前k-v 封装成node后插入到指定桶位后，在桶位中的所属链表的下标位置
         //0 表示当前桶位为null，node可以直接放着
@@ -2480,14 +2481,15 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Returns the stamp bits for resizing a table of size n.
      * Must be negative when shifted left by RESIZE_STAMP_SHIFT.
-     * 16 -> 32
-     * numberOfLeadingZeros(16) => 1 0000 =>27 =>0000 0000 0001 1011
+     * 扩容时会计算一个唯一标识戳
+     * 16 -> 32  扩容
+     * numberOfLeadingZeros(16) => 1 0000 =>27(32-5得来) =>0000 0000 0001 1011
      * |
      * (1 << (RESIZE_STAMP_BITS - 1)) => 1000 0000 0000 0000 => 32768
      * ---------------------------------------------------------------
      * 0000 0000 0001 1011
      * 1000 0000 0000 0000
-     * 1000 0000 0001 1011
+     * 1000 0000 0001 1011  或运算 结果  无论哪一个线程过来 只要是 16扩容到32  都会拿到这个戳
      */
     static final int resizeStamp(int n) {
         return Integer.numberOfLeadingZeros(n) | (1 << (RESIZE_STAMP_BITS - 1));
