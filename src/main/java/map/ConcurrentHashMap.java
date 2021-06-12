@@ -704,10 +704,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * 前面是高16位 后面是16位运算
      * 1100 0011 1010 0101 0001 1100 0001 1110
      * 0000 0000 0000 0000 1100 0011 1010 0101 右移16位后得到的值  得到了高16位
-     * 1100 0011 1010 0101 1101 1111 1011 1011 此时执行过亦或后  低16位就包含了高16位的特征
+     * 1100 0011 1010 0101 1101 1111 1011 1011 此时执行过亦或后(不同为1 相同为0)  低16位就包含了高16位的特征
      * ---------------------------------------
      * 1100 0011 1010 0101 1101 1111 1011 1011
-     * 0111 1111 1111 1111 1111 1111 1111 1111   31个1
+     * 0111 1111 1111 1111 1111 1111 1111 1111   31个1 (也就是HASH_BITS)
      * 0100 0011 1010 0101 1101 1111 1011 1011   只把最高位的符号位修改为0  保证了数值为正数
      * 当前hash值 右移16位 得到高16位 hash 值，然后在和原来的hash值亦或 (不同为1 相同为0)
      * 得到的值在和一个HASH_BITS 进行 &(与) 得到一个正数
@@ -1139,7 +1139,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 //cas操作失败，表示在当前线程之前，有其它线程先你一步向指定i桶位设置值了。
                 //当前线程只能再次自旋，去走其它逻辑。
                 if (casTabAt(tab, i, null,
-                        new Node<K,V>(hash, key, value, null)))
+                        new Node<K,V>(hash, key, value, null))) // 设置桶位节点的值，成功后就break出来，否则走到其他逻辑
                     break;                   // no lock when adding to empty bin
             }
 
@@ -2357,7 +2357,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public static <K> KeySetView<K,Boolean> newKeySet() {
         return new KeySetView<K,Boolean>
-                (new java.util.concurrent.ConcurrentHashMap<K,Boolean>(), Boolean.TRUE);
+                (new ConcurrentHashMap<K,Boolean>(), Boolean.TRUE);
     }
 
     /**
@@ -2374,7 +2374,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public static <K> KeySetView<K,Boolean> newKeySet(int initialCapacity) {
         return new KeySetView<K,Boolean>
-                (new java.util.concurrent.ConcurrentHashMap<K,Boolean>(initialCapacity), Boolean.TRUE);
+                (new ConcurrentHashMap<K,Boolean>(initialCapacity), Boolean.TRUE);
     }
 
     /**
@@ -4023,10 +4023,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Traverser to support iterator.remove.
      */
     static class BaseIterator<K,V> extends Traverser<K,V> {
-        final java.util.concurrent.ConcurrentHashMap<K,V> map;
+        final ConcurrentHashMap<K,V> map;
         Node<K,V> lastReturned;
         BaseIterator(Node<K,V>[] tab, int size, int index, int limit,
-                     java.util.concurrent.ConcurrentHashMap<K,V> map) {
+                     ConcurrentHashMap<K,V> map) {
             super(tab, size, index, limit);
             this.map = map;
             advance();
@@ -4047,7 +4047,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final class KeyIterator<K,V> extends BaseIterator<K,V>
             implements Iterator<K>, Enumeration<K> {
         KeyIterator(Node<K,V>[] tab, int index, int size, int limit,
-                    java.util.concurrent.ConcurrentHashMap<K,V> map) {
+                    ConcurrentHashMap<K,V> map) {
             super(tab, index, size, limit, map);
         }
 
@@ -4067,7 +4067,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final class ValueIterator<K,V> extends BaseIterator<K,V>
             implements Iterator<V>, Enumeration<V> {
         ValueIterator(Node<K,V>[] tab, int index, int size, int limit,
-                      java.util.concurrent.ConcurrentHashMap<K,V> map) {
+                      ConcurrentHashMap<K,V> map) {
             super(tab, index, size, limit, map);
         }
 
@@ -4087,7 +4087,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final class EntryIterator<K,V> extends BaseIterator<K,V>
             implements Iterator<Map.Entry<K,V>> {
         EntryIterator(Node<K,V>[] tab, int index, int size, int limit,
-                      java.util.concurrent.ConcurrentHashMap<K,V> map) {
+                      ConcurrentHashMap<K,V> map) {
             super(tab, index, size, limit, map);
         }
 
@@ -4109,8 +4109,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final class MapEntry<K,V> implements Map.Entry<K,V> {
         final K key; // non-null
         V val;       // non-null
-        final java.util.concurrent.ConcurrentHashMap<K,V> map;
-        MapEntry(K key, V val, java.util.concurrent.ConcurrentHashMap<K,V> map) {
+        final ConcurrentHashMap<K,V> map;
+        MapEntry(K key, V val, ConcurrentHashMap<K,V> map) {
             this.key = key;
             this.val = val;
             this.map = map;
@@ -4225,10 +4225,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     static final class EntrySpliterator<K,V> extends Traverser<K,V>
             implements Spliterator<Map.Entry<K,V>> {
-        final java.util.concurrent.ConcurrentHashMap<K,V> map; // To export MapEntry
+        final ConcurrentHashMap<K,V> map; // To export MapEntry
         long est;               // size estimate
         EntrySpliterator(Node<K,V>[] tab, int size, int index, int limit,
-                         long est, java.util.concurrent.ConcurrentHashMap<K,V> map) {
+                         long est, ConcurrentHashMap<K,V> map) {
             super(tab, size, index, limit);
             this.map = map;
             this.est = est;
@@ -5014,15 +5014,15 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     abstract static class CollectionView<K,V,E>
             implements Collection<E>, java.io.Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
-        final java.util.concurrent.ConcurrentHashMap<K,V> map;
-        CollectionView(java.util.concurrent.ConcurrentHashMap<K,V> map)  { this.map = map; }
+        final ConcurrentHashMap<K,V> map;
+        CollectionView(ConcurrentHashMap<K,V> map)  { this.map = map; }
 
         /**
          * Returns the map backing this view.
          *
          * @return the map backing this view
          */
-        public java.util.concurrent.ConcurrentHashMap<K,V> getMap() { return map; }
+        public ConcurrentHashMap<K,V> getMap() { return map; }
 
         /**
          * Removes all of the elements from this view, by removing all
@@ -5178,7 +5178,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             implements Set<K>, java.io.Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
         private final V value;
-        KeySetView(java.util.concurrent.ConcurrentHashMap<K,V> map, V value) {  // non-public
+        KeySetView(ConcurrentHashMap<K,V> map, V value) {  // non-public
             super(map);
             this.value = value;
         }
@@ -5214,7 +5214,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          */
         public Iterator<K> iterator() {
             Node<K,V>[] t;
-            java.util.concurrent.ConcurrentHashMap<K,V> m = map;
+            ConcurrentHashMap<K,V> m = map;
             int f = (t = m.table) == null ? 0 : t.length;
             return new KeyIterator<K,V>(t, f, 0, f, m);
         }
@@ -5275,7 +5275,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         public Spliterator<K> spliterator() {
             Node<K,V>[] t;
-            java.util.concurrent.ConcurrentHashMap<K,V> m = map;
+            ConcurrentHashMap<K,V> m = map;
             long n = m.sumCount();
             int f = (t = m.table) == null ? 0 : t.length;
             return new KeySpliterator<K,V>(t, f, 0, f, n < 0L ? 0L : n);
@@ -5300,7 +5300,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final class ValuesView<K,V> extends CollectionView<K,V,V>
             implements Collection<V>, java.io.Serializable {
         private static final long serialVersionUID = 2249069246763182397L;
-        ValuesView(java.util.concurrent.ConcurrentHashMap<K,V> map) { super(map); }
+        ValuesView(ConcurrentHashMap<K,V> map) { super(map); }
         public final boolean contains(Object o) {
             return map.containsValue(o);
         }
@@ -5318,7 +5318,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public final Iterator<V> iterator() {
-            java.util.concurrent.ConcurrentHashMap<K,V> m = map;
+            ConcurrentHashMap<K,V> m = map;
             Node<K,V>[] t;
             int f = (t = m.table) == null ? 0 : t.length;
             return new ValueIterator<K,V>(t, f, 0, f, m);
@@ -5333,7 +5333,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         public Spliterator<V> spliterator() {
             Node<K,V>[] t;
-            java.util.concurrent.ConcurrentHashMap<K,V> m = map;
+            ConcurrentHashMap<K,V> m = map;
             long n = m.sumCount();
             int f = (t = m.table) == null ? 0 : t.length;
             return new ValueSpliterator<K,V>(t, f, 0, f, n < 0L ? 0L : n);
@@ -5358,7 +5358,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final class EntrySetView<K,V> extends CollectionView<K,V, Entry<K,V>>
             implements Set<Map.Entry<K,V>>, java.io.Serializable {
         private static final long serialVersionUID = 2249069246763182397L;
-        EntrySetView(java.util.concurrent.ConcurrentHashMap<K,V> map) { super(map); }
+        EntrySetView(ConcurrentHashMap<K,V> map) { super(map); }
 
         public boolean contains(Object o) {
             Object k, v, r; Map.Entry<?,?> e;
@@ -5381,7 +5381,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          * @return an iterator over the entries of the backing map
          */
         public Iterator<Map.Entry<K,V>> iterator() {
-            java.util.concurrent.ConcurrentHashMap<K,V> m = map;
+            ConcurrentHashMap<K,V> m = map;
             Node<K,V>[] t;
             int f = (t = m.table) == null ? 0 : t.length;
             return new EntryIterator<K,V>(t, f, 0, f, m);
@@ -5421,7 +5421,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         public Spliterator<Map.Entry<K,V>> spliterator() {
             Node<K,V>[] t;
-            java.util.concurrent.ConcurrentHashMap<K,V> m = map;
+            ConcurrentHashMap<K,V> m = map;
             long n = m.sumCount();
             int f = (t = m.table) == null ? 0 : t.length;
             return new EntrySpliterator<K,V>(t, f, 0, f, n < 0L ? 0L : n, m);
@@ -6934,7 +6934,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static {
         try {
             U = sun.misc.Unsafe.getUnsafe();
-            Class<?> k = class;
+            Class<?> k = ConcurrentHashMap.class;
             SIZECTL = U.objectFieldOffset
                     (k.getDeclaredField("sizeCtl"));
             TRANSFERINDEX = U.objectFieldOffset
