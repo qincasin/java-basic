@@ -1137,7 +1137,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 //cas操作失败，表示在当前线程之前，有其它线程先你一步向指定i桶位设置值了。
                 //当前线程只能再次自旋，去走其它逻辑。
                 if (casTabAt(tab, i, null,
-                        new Node<K,V>(hash, key, value, null))) // 设置桶位节点的值，成功后就break出来，否则走到其他逻辑
+                        new Node<K,V>(hash, key, value, null))) // 只有当数组i桶位是null时 设置桶位节点的值，成功后就break出来，否则走到其他逻辑
                     break;                   // no lock when adding to empty bin
             }
 
@@ -1186,8 +1186,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 //1.更新循环处理节点为 当前节点的下一个节点
                                 //2.判断下一个节点是否为null，如果是null，说明当前节点已经是队尾了，插入数据需要追加到队尾节点的后面。
 
-                                Node<K,V> pred = e;
-                                if ((e = e.next) == null) {
+                                Node<K,V> pred = e;  //当前节点，
+                                if ((e = e.next) == null) {  //指针往后走一步，pred就是上一个节点了；
                                     pred.next = new Node<K,V>(hash, key,
                                             value, null);
                                     break;
