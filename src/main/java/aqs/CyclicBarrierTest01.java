@@ -10,14 +10,14 @@ import java.util.concurrent.*;
 public class CyclicBarrierTest01 {
     public static void main(String[] args) {
 
-        String[] heros = {"安其拉","亚瑟","马超","张飞","刘备"};
+        String[] heroes = {"安其拉","亚瑟","马超","张飞","刘备"};
 
         ExecutorService service = Executors.newFixedThreadPool(5);
 
         CyclicBarrier barrier = new CyclicBarrier(5);
 
         for (int i = 0; i < 5; i++) {
-            service.execute(new Player(heros[i],barrier));
+            service.execute(new Player(heroes[i],barrier));
         }
 
         service.shutdown();
