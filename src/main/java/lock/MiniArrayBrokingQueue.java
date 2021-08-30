@@ -38,6 +38,8 @@ public class MiniArrayBrokingQueue implements BrokingQueue {
 
 
     public MiniArrayBrokingQueue(int size) {
+        retry:
+            break retry;
         this.size = size;
         this.queues = new Object[size];
     }
