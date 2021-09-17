@@ -1,7 +1,10 @@
 package stream;
 
+import com.google.common.collect.Lists;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +27,22 @@ public class LimitTest {
         String format = String.format("%02d", a);
         System.out.println(format.length());
         System.out.println(format);
+
+        System.out.println("--------------");
+        List<String> res = new CopyOnWriteArrayList<>();
+        Lists.partition(list,2)
+                .stream().map(LimitTest::getInfo)
+                .forEach(res::addAll);
+        System.out.println(res);
+    }
+    private static List<String> getInfo(List<A> list){
+        List<String> result = new ArrayList<>();
+        for (A a : list) {
+            if (a.getI()>=2){
+                result.add(a.getName());
+            }
+        }
+        return  result;
     }
 
  static class A{
